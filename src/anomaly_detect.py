@@ -6,6 +6,84 @@ import seaborn as sns
 import joblib
 import streamlit as st
 import xgboost as xgb  # Import XGBoost
+import requests
+import tarfile
+
+def download_dataset():
+    """
+    Downloads the dataset from the specified URL if not already present.
+    
+    Returns:
+        bool: True if dataset is available, False otherwise
+    """
+    # Create data folder if it doesn't exist
+    os.makedirs("data", exist_ok=True)
+    
+    # Detailed logging for dataset files
+    required_paths = [
+        "data/logon.csv", 
+        "data/device.csv", 
+        "data/http.csv", 
+        "data/LDAP"
+    ]
+    
+    # Check file existence with detailed logging
+    missing_files = []
+    for path in required_paths:
+        if not os.path.exists(path):
+            missing_files.append(path)
+            st.write(f"Missing: {path}")
+    
+    # If LDAP folder exists, check for CSV files
+    if os.path.exists("data/LDAP"):
+        ldap_csvs = [f for f in os.listdir("data/LDAP") if f.endswith('.csv')]
+        if not ldap_csvs:
+            missing_files.append("LDAP CSVs")
+            st.write("No CSV files in LDAP folder")
+    
+    # If all required files are present, skip download
+    if not missing_files:
+        st.info("Dataset is already available. Skipping download.")
+        return True
+    
+    # Dataset download URL
+    url = "https://kilthub.cmu.edu/ndownloader/files/24857825"
+    
+    # Path for downloaded tar.bz2 file
+    tar_path = "data/dataset.tar.bz2"
+    
+    try:
+        # Download the file
+        st.info("Downloading dataset...")
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+        
+        # Save the downloaded tar.bz2 file
+        with open(tar_path, 'wb') as f:
+            total_length = response.headers.get('content-length')
+            if total_length is None:
+                f.write(response.content)
+            else:
+                dl = 0
+                total_length = int(total_length)
+                for data in response.iter_content(chunk_size=4096):
+                    dl += len(data)
+                    f.write(data)
+                    st.progress(dl / total_length)
+        
+        # Extract the tar.bz2 file
+        with tarfile.open(tar_path, 'r:bz2') as tar_ref:
+            tar_ref.extractall("data")
+        
+        # Remove the tar.bz2 file after extraction
+        os.remove(tar_path)
+        
+        st.success("Dataset downloaded and extracted successfully!")
+        return True
+    
+    except Exception as e:
+        st.error(f"Failed to download dataset: {e}")
+        return False
 
 
 def create_unified_dataset():
@@ -257,6 +335,7 @@ def main():
 
 if __name__ == "__main__":
     # Create a unified dataset
+    download_dataset()
     unified_dataset = create_unified_dataset()
     # Run the Streamlit application
     main()
