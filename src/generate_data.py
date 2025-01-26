@@ -39,7 +39,7 @@ def load_raw_logs(log_folder):
 def preprocess_logs(raw_logs):
     """
     Clean up and process raw log data to extract useful fields and make it analysis-ready.
-    
+
     Args:
         raw_logs (pd.DataFrame): The raw combined log data.
 
@@ -65,7 +65,7 @@ def generate_features(preprocessed_logs):
     """
     Generate structured features from preprocessed logs.
     Handles missing columns gracefully, so no crashes happen if some logs are incomplete.
-    
+
     Args:
         preprocessed_logs (pd.DataFrame): The cleaned log data after preprocessing.
 
@@ -152,7 +152,7 @@ def dataset_generation_pipeline(log_folder, output_file):
     2. Preprocess logs to clean and organize them.
     3. Generate structured features from the cleaned data.
     4. Save the final dataset to a CSV file.
-    
+
     Args:
         log_folder (str): Path to the folder containing raw log files.
         output_file (str): Path to save the generated structured dataset.
