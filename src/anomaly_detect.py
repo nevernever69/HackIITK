@@ -20,6 +20,7 @@ def create_unified_dataset():
     logon_data["date"] = pd.to_datetime(logon_data["date"])
     logon_data["hour"] = logon_data["date"].dt.hour
     logon_data["after_hours"] = logon_data["hour"].apply(
+        # Mark logons as after-hours if outside 8 AM - 6 PM
         lambda x: 1 if x < 8 or x > 18 else 0
     )
     logon_data["logon_count"] = logon_data.groupby("user")["user"].transform("count")
@@ -32,7 +33,7 @@ def create_unified_dataset():
     )
     device_data["thumb_drive_count"] = device_data.groupby("user")[
         "thumb_drive_usage"
-    ].transform("sum")
+    ].transform("sum")  # Count thumb drive connection events per user
 
     # Load and preprocess http data
     http_data = pd.read_csv(
@@ -64,15 +65,18 @@ def create_unified_dataset():
         .reset_index()
     )
 
+    # Aggregate device data to summarize thumb drive usage
     device_agg = (
         device_data.groupby("user")
         .agg(thumb_drive_count=("thumb_drive_count", "max"))
         .reset_index()
     )
 
+    # Aggregate HTTP data to summarize URL access activity
     http_agg = (
         http_data.groupby("user").agg(url_count=("url_count", "max")).reset_index()
     )
+
     # Merge all datasets
     merged_data = logon_agg.merge(device_agg, on="user", how="outer")
     merged_data = merged_data.merge(http_agg, on="user", how="outer")
@@ -86,27 +90,47 @@ def create_unified_dataset():
 
     return merged_data
 
-    # Merge all datasets
-
 
 # Load pre-trained model and scaler
-@st.cache_resource  # Cache the model and scaler for better performance
+# caching the model and scaler for better performance
+@st.cache_resource  
 def load_model_and_scaler():
+    # Load the pre-trained XGBoost model
     model = joblib.load("./models/xgboost_model.pkl")
+    # Load the scaler for feature normalization
     scaler = joblib.load("./models/scaler.pkl")
+
     return model, scaler
 
 
-# Load data
-@st.cache_data  # Cache the data to avoid reloading
+# Use Streamlit's caching feature to optimize performance and prevent redundant data loading
+@st.cache_data
 def load_data():
-    # Load data with low_memory=False to avoid DtypeWarning
+    """
+    Loads the unified dataset from a CSV file.
+
+    Returns:
+        pd.DataFrame: The unified dataset.
+    """
+    # Read the CSV file with low_memory=False to handle large files efficiently and avoid DtypeWarnings
     data = pd.read_csv("unified_dataset.csv", low_memory=False)
+
     return data
 
 
-# Preprocess data using the loaded scaler
+
 def preprocess_data(data, scaler):
+    """
+    Prepares and scales the dataset features using the provided scaler.
+
+    Args:
+        data (pd.DataFrame): The unified dataset containing user features.
+        scaler: The pre-loaded scaler object used for feature normalization.
+
+    Returns:
+        np.ndarray: Scaled feature matrix ready for model input.
+    """
+    # Define the features to be used for model prediction
     features = [
         "total_logons",
         "after_hours_logons",
@@ -114,8 +138,13 @@ def preprocess_data(data, scaler):
         "url_count",
         "role",
     ]
+
+    # Extract only the selected feature columns from the dataset
     X = data[features]
+
+    # Scale the feature matrix using the provided scaler for normalization
     X_scaled = scaler.transform(X)
+
     return X_scaled
 
 
