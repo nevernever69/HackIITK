@@ -173,10 +173,11 @@ def create_unified_dataset():
 # caching the model and scaler for better performance
 @st.cache_resource
 def load_model_and_scaler():
-    # Load the pre-trained XGBoost model
-    model = joblib.load("./models/xgboost_model.pkl")
-    # Load the scaler for feature normalization
-    scaler = joblib.load("./models/scaler.pkl")
+    model_path = os.path.join(os.path.dirname(__file__), 'models', 'xgboost_model.pkl')
+    scaler_path = os.path.join(os.path.dirname(__file__), 'models', 'scaler.pkl')
+    model = joblib.load(model_path)
+    scaler = joblib.load(scaler_path)
+
 
     return model, scaler
 
