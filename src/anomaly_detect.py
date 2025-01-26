@@ -93,7 +93,7 @@ def create_unified_dataset():
 
 # Load pre-trained model and scaler
 # caching the model and scaler for better performance
-@st.cache_resource  
+@st.cache_resource
 def load_model_and_scaler():
     # Load the pre-trained XGBoost model
     model = joblib.load("./models/xgboost_model.pkl")
@@ -116,7 +116,6 @@ def load_data():
     data = pd.read_csv("unified_dataset.csv", low_memory=False)
 
     return data
-
 
 
 def preprocess_data(data, scaler):
@@ -150,22 +149,37 @@ def preprocess_data(data, scaler):
 
 # Streamlit app
 def main():
+    """
+    Main function for the Streamlit app that performs anomaly detection and visualization.
+
+    This dashboard:
+    - Loads the pre-trained model and scaler.
+    - Loads and preprocesses the dataset.
+    - Generates anomaly predictions.
+    - Saves results to a CSV.
+    - Displays results and visualizations on the dashboard.
+    """
+
+    # Display the app title
     st.title("Anomaly Detection Dashboard")
 
-    # Load pre-trained model and scaler
+    # Load the pre-trained machine learning model and feature scaler
     model, scaler = load_model_and_scaler()
 
-    # Load data
+    # Load the unified dataset
     data = load_data()
 
-    # Preprocess data
+    # Preprocess the dataset using the scaler
     X_scaled = preprocess_data(data, scaler)
 
-    # Generate predictions
-    data["anomaly_score"] = model.predict_proba(X_scaled)[:, 1]
-    data["anomaly_prediction"] = model.predict(X_scaled)
+    # Predict anomaly scores and classifications
+    # `predict_proba` gives probability scores, while `predict` provides binary classification
+    data["anomaly_score"] = model.predict_proba(X_scaled)[
+        :, 1
+    ]  # Probabilities for anomalies
+    data["anomaly_prediction"] = model.predict(X_scaled)  # Anomaly predictions (0 or 1)
 
-    # Save results to CSV
+    # Save the processed results with predictions to a CSV file
     output_csv_path = "anomaly_results.csv"
     data[
         [
@@ -197,7 +211,7 @@ def main():
         ].head(1000)
     )
 
-    # Visualize anomaly scores
+    # Visualize the distribution of anomaly scores
     st.subheader("Anomaly Score Distribution")
     plt.figure(figsize=(8, 6))
     sns.histplot(data["anomaly_score"], bins=50, kde=True, color="blue")
@@ -206,23 +220,33 @@ def main():
     plt.ylabel("Frequency")
     st.pyplot(plt)
 
-    # Visualize anomaly predictions
+    # Visualize the count of anomaly predictions
     st.subheader("Anomaly Predictions")
-    anomaly_counts = data["anomaly_prediction"].value_counts()
+    anomaly_counts = data[
+        "anomaly_prediction"
+    ].value_counts()  # Count normal vs anomaly predictions
     plt.figure(figsize=(6, 4))
     sns.barplot(
-        x=anomaly_counts.index,
-        y=anomaly_counts.values,
-        hue=anomaly_counts.index,
-        palette="viridis",
-        legend=False,
+        x=anomaly_counts.index,  # Prediction categories (0=normal, 1=anomaly)
+        y=anomaly_counts.values,  # Corresponding counts
+        hue=anomaly_counts.index,  # Add color distinction
+        palette="viridis",  # Color palette for the bars
+        legend=False,  # Disable legend for simplicity
     )
+
+    # Add a title to the plot
     plt.title("Anomaly Predictions (0 = Normal, 1 = Anomaly)")
+
+    # Label the x-axis
     plt.xlabel("Prediction")
+
+    # Label the y-axis
     plt.ylabel("Count")
+
+    # Render the plot in Streamlit
     st.pyplot(plt)
 
-    # Feature Importance (if available)
+    # Display feature importance if supported by the model
     if hasattr(model, "feature_importances_"):
         st.subheader("Feature Importance")
         plt.figure(figsize=(10, 6))
