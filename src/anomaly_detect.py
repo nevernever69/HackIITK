@@ -256,5 +256,7 @@ def main():
 
 
 if __name__ == "__main__":
+    # Create a unified dataset
     unified_dataset = create_unified_dataset()
+    # Run the Streamlit application
     main()
