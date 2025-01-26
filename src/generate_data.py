@@ -182,7 +182,7 @@ def dataset_generation_pipeline(log_folder, output_file):
 # Main Execution
 if __name__ == "__main__":
     # Path to the folder where raw logs are stored
-    log_folder = "data"  # Update this path if necessary
+    log_folder = "data/r1"  # Update this path if necessary
     print(f"Looking for log files in: {os.path.abspath(log_folder)}")
 
     # Path where the structured dataset will be saved
