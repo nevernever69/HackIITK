@@ -21,10 +21,10 @@ def download_dataset():
     
     # Detailed logging for dataset files
     required_paths = [
-        "data/logon.csv", 
-        "data/device.csv", 
-        "data/http.csv", 
-        "data/LDAP"
+        "data/r1/logon.csv", 
+        "data/r1/device.csv", 
+        "data/r1/http.csv", 
+        "data/r1/LDAP"
     ]
     
     # Check file existence with detailed logging
@@ -94,7 +94,7 @@ def create_unified_dataset():
         pd.DataFrame: Unified dataset with aggregated features per user.
     """
     # Load and preprocess logon data
-    logon_data = pd.read_csv("./data/logon.csv")
+    logon_data = pd.read_csv("./data/r1/logon.csv")
     logon_data["date"] = pd.to_datetime(logon_data["date"])
     logon_data["hour"] = logon_data["date"].dt.hour
     logon_data["after_hours"] = logon_data["hour"].apply(
@@ -104,7 +104,7 @@ def create_unified_dataset():
     logon_data["logon_count"] = logon_data.groupby("user")["user"].transform("count")
 
     # Load and preprocess device data
-    device_data = pd.read_csv("data/device.csv")
+    device_data = pd.read_csv("data/r1/device.csv")
     device_data["date"] = pd.to_datetime(device_data["date"])
     device_data["thumb_drive_usage"] = device_data["activity"].apply(
         lambda x: 1 if x == "connect" else 0
@@ -115,13 +115,13 @@ def create_unified_dataset():
 
     # Load and preprocess http data
     http_data = pd.read_csv(
-        "data/http.csv", header=None, names=["id", "date", "user", "pc", "url"]
+        "data/r1/http.csv", header=None, names=["id", "date", "user", "pc", "url"]
     )
     http_data["date"] = pd.to_datetime(http_data["date"])
     http_data["url_count"] = http_data.groupby("user")["url"].transform("count")
 
     # Load and preprocess LDAP data
-    ldap_folder = "data/LDAP"
+    ldap_folder = "data/r1/LDAP"
     ldap_files = [
         os.path.join(ldap_folder, file)
         for file in os.listdir(ldap_folder)
